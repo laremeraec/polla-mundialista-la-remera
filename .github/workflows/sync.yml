@@ -1,0 +1,31 @@
+name: AutoSync Polla Mundialista
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run-bot-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargando Código
+        uses: actions/checkout@v4
+
+      - name: Instalando Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalando Dependencias
+        run: |
+          cd bot
+          npm install
+
+      - name: Sincronizando Resultados
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          API_SPORTS_KEY: ${{ secrets.API_SPORTS_KEY }}
+        run: |
+          cd bot
+          node sync.js
