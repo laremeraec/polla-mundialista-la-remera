@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5xuj_6jJi6obCE48RALyunrUwML_BwHI",
@@ -465,138 +465,133 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadLeaderboard();
     }
 
-    async function loadLeaderboard() {
-        const leaderboardContainer = document.getElementById('leaderboard-container');
+    // --- Caché para listeners en tiempo real ---
+    let hasLoadedUsers = false;
+    let usersDataCache = {};
+    let lastResultados = {};
+    let lastPreds = {};
+
+    function renderLeaderboard() {
         const leaderboardBody = document.getElementById('leaderboard-body');
-        
-        leaderboardContainer.style.display = 'block';
-        leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Calculando ranking exacto global de toda la Polla... ⏱️</td></tr>';
-        
-        // Bloqueo Anti-Trampas
-        const now = new Date();
-        const canViewOthers = now >= CUTOFF_DATE;
+        const canViewOthers = new Date() >= CUTOFF_DATE;
 
-        try {
-            // Descargar caja fuerte del Administrador (Resultados reales)
-            let resultadosOficiales = {};
-            try {
-                const adminDoc = await getDoc(doc(db, "admin", "resultados"));
-                if(adminDoc.exists() && adminDoc.data().partidos) {
-                    resultadosOficiales = adminDoc.data().partidos;
-                }
-            } catch(e) { /* Si no hay resultados todavía, se ignora el error */ }
-
-            // Extraer usuarios y predicciones masivamente desde la nube
-            const usersSnap = await getDocs(collection(db, "usuarios"));
-            const predsSnap = await getDocs(collection(db, "predicciones"));
-            
-            let usersData = {};
-            usersSnap.forEach(userDoc => {
-                let nText = userDoc.data().nombre_completo || userDoc.data().nombre || "Competidor Anónimo";
-                nText = nText.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
-                usersData[userDoc.id] = { 
-                    uid: userDoc.id,
-                    nombre: nText, 
-                    pts: 0,
-                    predicciones: {}
-                };
-            });
-            
-            predsSnap.forEach(predDoc => {
-                const uid = predDoc.id;
-                const userPreds = predDoc.data().partidos;
-                
-                if (usersData[uid] && userPreds) {
-                    // Caching para el Visualizador Público
-                    usersData[uid].predicciones = userPreds;
-
-                    // Puntuar contra la nube
-                    Object.keys(resultadosOficiales).forEach(matchId => {
-                        const real = resultadosOficiales[matchId];
-                        const pred = userPreds[matchId];
-                        
-                        // Evaluar
-                        if (real && pred) {
-                            const r1 = parseInt(real.s1);
-                            const r2 = parseInt(real.s2);
-                            const p1 = parseInt(pred.s1);
-                            const p2 = parseInt(pred.s2);
-                            
-                            // Asegurarnos que todos sean números
-                            if (!isNaN(r1) && !isNaN(r2) && !isNaN(p1) && !isNaN(p2)) {
-                                if (p1 === r1 && p2 === r2) {
-                                    usersData[uid].pts += 3; // EXACTO: ORO
-                                } else {
-                                    // TENDENCIA O GANADOR: Consuelo
-                                    const diffReal = r1 - r2;
-                                    const diffPred = p1 - p2;
-                                    
-                                    const ganadorReal = diffReal > 0 ? 1 : (diffReal < 0 ? 2 : 0);
-                                    const ganadorPred = diffPred > 0 ? 1 : (diffPred < 0 ? 2 : 0);
-                                    
-                                    if (ganadorReal === ganadorPred) {
-                                        usersData[uid].pts += 1;
-                                    }
+        // Recalcular puntos desde cero con la data en caché
+        Object.keys(usersDataCache).forEach(uid => {
+            usersDataCache[uid].pts = 0;
+            const userPreds = lastPreds[uid];
+            if (userPreds) {
+                usersDataCache[uid].predicciones = userPreds;
+                Object.keys(lastResultados).forEach(matchId => {
+                    const real = lastResultados[matchId];
+                    const pred = userPreds[matchId];
+                    if (real && pred) {
+                        const r1 = parseInt(real.s1);
+                        const r2 = parseInt(real.s2);
+                        const p1 = parseInt(pred.s1);
+                        const p2 = parseInt(pred.s2);
+                        if (!isNaN(r1) && !isNaN(r2) && !isNaN(p1) && !isNaN(p2)) {
+                            if (p1 === r1 && p2 === r2) {
+                                usersDataCache[uid].pts += 3; // Marcador exacto
+                            } else {
+                                const diffReal = r1 - r2;
+                                const diffPred = p1 - p2;
+                                const ganadorReal = diffReal > 0 ? 1 : (diffReal < 0 ? 2 : 0);
+                                const ganadorPred = diffPred > 0 ? 1 : (diffPred < 0 ? 2 : 0);
+                                if (ganadorReal === ganadorPred) {
+                                    usersDataCache[uid].pts += 1; // Tendencia / Ganador
                                 }
                             }
                         }
-                    });
-                }
-            });
-            
-            // Ordenar Ranking de mayor a menor
-            const ranking = Object.values(usersData).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                return a.nombre.localeCompare(b.nombre);
-            });
-            
-            // Dibujar la tabla
-            leaderboardBody.innerHTML = '';
-            
-            if (ranking.length === 0) {
-                leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Aún no existen jugadores dentro de la Polla Oficial.</td></tr>';
-            } else {
-                ranking.forEach((u, idx) => {
-                    const tr = document.createElement('tr');
-                    if(idx < 3) tr.className = 'top-3';
-                    
-                    let viewBtnHtml = '';
-                    if (canViewOthers) {
-                        viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="padding: 0.3rem 0.6rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.1); color: var(--primary); cursor: pointer; transition: 0.2s;">👁️ Ver</button>`;
-                    } else {
-                        viewBtnHtml = `<span title="Por transparencia anti-trampas, se revelan al pitar el Mundial" style="opacity: 0.4; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 6px; cursor: not-allowed;">🔒 Seguro</span>`;
                     }
-
-                    tr.innerHTML = `
-                        <td style="font-weight: bold; width: 60px; text-align: center;">${idx + 1}</td>
-                        <td style="font-weight: 500;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                                <span>${u.nombre}</span>
-                                ${viewBtnHtml}
-                            </div>
-                        </td>
-                        <td style="text-align: right; font-weight: 900; color: var(--primary); font-size: 1.15rem;">${u.pts}</td>
-                    `;
-                    leaderboardBody.appendChild(tr);
                 });
+            }
+        });
 
-                // Attach Events a Botones de Auditoría
-                if (canViewOthers) {
-                    const btnVer = document.querySelectorAll('.view-preds-btn');
-                    btnVer.forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const selectedUid = btn.getAttribute('data-uid');
-                            if(usersData[selectedUid]) {
-                                openViewerModal(usersData[selectedUid]);
-                            }
-                        });
-                    });
-                }
+        // Ordenar ranking de mayor a menor
+        const ranking = Object.values(usersDataCache).sort((a, b) => {
+            if (b.pts !== a.pts) return b.pts - a.pts;
+            return a.nombre.localeCompare(b.nombre);
+        });
+
+        leaderboardBody.innerHTML = '';
+
+        if (ranking.length === 0) {
+            leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Aún no existen jugadores dentro de la Polla Oficial.</td></tr>';
+            return;
+        }
+
+        ranking.forEach((u, idx) => {
+            const tr = document.createElement('tr');
+            if (idx < 3) tr.className = 'top-3';
+
+            let viewBtnHtml = '';
+            if (canViewOthers) {
+                viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="width:72px; height:34px; font-size:0.85rem; border-radius:6px; border:1px solid var(--primary); background:rgba(56,189,248,0.1); color:var(--primary); cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0;">👁️ Ver</button>`;
+            } else {
+                viewBtnHtml = `<span title="Por transparencia anti-trampas, se revelan al pitar el Mundial" style="opacity: 0.4; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 6px; cursor: not-allowed;">🔒 Seguro</span>`;
             }
 
+            tr.innerHTML = `
+                <td style="font-weight: bold; width: 60px; text-align: center;">${idx + 1}</td>
+                <td style="font-weight: 500;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                        <span>${u.nombre}</span>
+                        ${viewBtnHtml}
+                    </div>
+                </td>
+                <td style="text-align: right; font-weight: 900; color: var(--primary); font-size: 1.15rem;">${u.pts}</td>
+            `;
+            leaderboardBody.appendChild(tr);
+        });
+
+        // Eventos de auditoría
+        if (canViewOthers) {
+            document.querySelectorAll('.view-preds-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const selectedUid = btn.getAttribute('data-uid');
+                    if (usersDataCache[selectedUid]) openViewerModal(usersDataCache[selectedUid]);
+                });
+            });
+        }
+    }
+
+    async function loadLeaderboard() {
+        const leaderboardContainer = document.getElementById('leaderboard-container');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+
+        leaderboardContainer.style.display = 'block';
+        leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Calculando ranking exacto global de toda la Polla... ⏱️</td></tr>';
+
+        try {
+            // Cargar usuarios una sola vez
+            if (!hasLoadedUsers) {
+                const usersSnap = await getDocs(collection(db, "usuarios"));
+                usersSnap.forEach(userDoc => {
+                    let nText = userDoc.data().nombre_completo || userDoc.data().nombre || "Competidor Anónimo";
+                    nText = nText.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    usersDataCache[userDoc.id] = { uid: userDoc.id, nombre: nText, pts: 0, predicciones: {} };
+                });
+                hasLoadedUsers = true;
+            }
+
+            // Listener en tiempo real: resultados del Admin
+            onSnapshot(doc(db, "admin", "resultados"), (docSnap) => {
+                if (docSnap.exists() && docSnap.data().partidos) {
+                    lastResultados = docSnap.data().partidos;
+                }
+                renderLeaderboard();
+            });
+
+            // Listener en tiempo real: predicciones de todos los usuarios
+            onSnapshot(collection(db, "predicciones"), (querySnapshot) => {
+                querySnapshot.forEach(predDoc => {
+                    lastPreds[predDoc.id] = predDoc.data().partidos;
+                });
+                renderLeaderboard();
+            });
+
         } catch (error) {
-            console.error("Fallo al cruzar datos de Leaderboard: ", error);
+            console.error("Fallo al conectar listeners en tiempo real: ", error);
             leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #ff4444;">Hubo un error de conexión al cargar las posiciones mundiales. Intenta recargar.</td></tr>';
         }
     }

@@ -16,6 +16,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// HERRAMIENTA DE ADMINISTRADOR (Pruebas)
+window.simularPartidoEnVivo = async function(matchId, s1, s2, status, minute) {
+    console.log(`🤖 Forzando resultado en Firebase: ${matchId} [${s1}-${s2}]`);
+    await setDoc(doc(db, "admin_playoff", "resultados"), {
+        partidos: { [matchId]: { s1: s1.toString(), s2: s2.toString(), status: status, minute: minute } },
+        ultima_sincronizacion: new Date().toISOString()
+    }, { merge: true });
+    console.log("✅ Simulación completada. Revisa la UI.");
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
 
@@ -339,17 +349,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const matchStart = new Date(match.time);
                 const isMatchStarted = new Date() >= matchStart;
                 const p = userData.predicciones[match.id] || { s1: '-', s2: '-' };
-                
+                const real = lastResultados[match.id];
+
                 // Si el partido ya empezó, revelamos el pronóstico. Si no, candado.
-                const scoreHTML = isMatchStarted 
+                const scoreHTML = isMatchStarted
                     ? `${p.s1} - ${p.s2}`
                     : `<span title="Por transparencia, se revela al iniciar el partido">🔒 Seguro</span>`;
+
+                // Resultado real (si el admin ya lo cargó en Firebase)
+                let realHTML = '';
+                if (real) {
+                    const isFinished = real.status === 'FT' || real.status === 'AET';
+                    const isLiveNow = !isFinished && real.status;
+                    const realColor = isFinished ? '#22c55e' : 'var(--primary)';
+                    const liveTag = isLiveNow ? `<span style="color:#22c55e; margin-left:6px;">● En vivo</span>` : '';
+                    realHTML = `<div style="width:100%; text-align:center; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); font-size:0.82rem; color:#9ca3af;">
+                        Resultado real: <strong style="color:${realColor}; font-size:1rem;">${real.s1} - ${real.s2}</strong>${liveTag}
+                    </div>`;
+                }
 
                 const card = document.createElement('div');
                 card.style.background = 'rgba(0,0,0,0.3)';
                 card.style.padding = '1rem';
                 card.style.borderRadius = '8px';
                 card.style.display = 'flex';
+                card.style.flexWrap = 'wrap';
                 card.style.justifyContent = 'space-between';
                 card.style.alignItems = 'center';
 
@@ -357,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="flex:1; text-align:right;">${match.team1} <img src="https://flagcdn.com/w40/${match.flag1}.png" style="width:20px; vertical-align:middle; margin-left:5px;"></div>
                     <div style="padding: 0 15px; font-weight:bold; color:var(--primary); font-size:1.1rem; text-align:center;">${scoreHTML}</div>
                     <div style="flex:1; text-align:left;"><img src="https://flagcdn.com/w40/${match.flag2}.png" style="width:20px; vertical-align:middle; margin-right:5px;"> ${match.team2}</div>
+                    ${realHTML}
                 `;
                 viewerMatches.appendChild(card);
             });
@@ -502,38 +527,92 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastResultados = {};
     let lastPreds = {};
 
+    // Timers cliente para incrementar minutos en vivo sin depender de Firebase
+    let liveTickerIntervals = {};
+
+    // Actualiza el badge "En vivo / Última actualización" del leaderboard
+    function updateLeaderboardLiveStatus() {
+        const liveStatuses = ['1H', '2H', 'HT', 'ET', 'P', 'PEN'];
+        const hasLive = Object.values(lastResultados).some(r => liveStatuses.includes(r.status));
+        const timeStr = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const statusEl = document.getElementById('leaderboard-status');
+        if (!statusEl) return;
+        statusEl.innerHTML = hasLive
+            ? `<span style="color:#22c55e; animation:pulse 2s infinite; font-size:0.7rem;">●</span>&ensp;<span style="color:#22c55e; font-weight:600;">Partidos en vivo</span>&ensp;·&ensp;Actualizado: <strong style="color:#fff;">${timeStr}</strong>`
+            : `Tabla actualizada: <strong style="color:#fff;">${timeStr}</strong>`;
+    }
+
     function updateLiveMatchesUI() {
+        // Limpiar timers previos al recibir nuevos datos
+        Object.values(liveTickerIntervals).forEach(id => clearInterval(id));
+        liveTickerIntervals = {};
+
         matchesList.forEach(m => {
             const realData = lastResultados[m.id];
             if (realData) {
-                let markerEl = document.getElementById(`liveMarker_${m.id}`);
+                const markerEl = document.getElementById(`liveMarker_${m.id}`);
                 if (markerEl) {
-                    let estadoTxt = realData.status;
+                    const statusCode = realData.status;
+                    let estadoTxt = statusCode;
                     let color = "var(--primary)";
                     let isLive = false;
 
-                    if(estadoTxt === "1H") { estadoTxt = "1er Tiempo"; isLive = true; }
-                    if(estadoTxt === "2H") { estadoTxt = "2do Tiempo"; isLive = true; }
-                    if(estadoTxt === "HT") { estadoTxt = "Medio Tiempo"; isLive = true; }
-                    if(estadoTxt === "ET") { estadoTxt = "Tiempo Extra"; isLive = true; }
-                    if(estadoTxt === "P" || estadoTxt === "PEN") { estadoTxt = "Penales"; isLive = true; }
-                    
-                    if(estadoTxt === "FT" || estadoTxt === "AET") {
-                        estadoTxt = "FINALIZADO";
-                        color = "#9ca3af"; 
-                    } else if (isLive) {
-                        color = "#22c55e"; 
-                    }
+                    if (statusCode === "1H")                       { estadoTxt = "1er Tiempo";  isLive = true; }
+                    else if (statusCode === "2H")                  { estadoTxt = "2do Tiempo";  isLive = true; }
+                    else if (statusCode === "HT")                  { estadoTxt = "Medio Tiempo"; isLive = true; }
+                    else if (statusCode === "ET")                  { estadoTxt = "Tiempo Extra"; isLive = true; }
+                    else if (statusCode === "P" || statusCode === "PEN") { estadoTxt = "Penales"; isLive = true; }
+                    else if (statusCode === "FT" || statusCode === "AET") { estadoTxt = "FINALIZADO ✓"; color = "#9ca3af"; }
 
-                    const minStr = realData.minute ? `(${realData.minute}')` : '';
-                    markerEl.innerHTML = `<span style="color: ${color}; ${isLive ? 'animation: pulse 2s infinite;' : ''}">${estadoTxt} ${minStr} &nbsp;|&nbsp; <span style="font-size:1.3rem; color:#fff;">${realData.s1} - ${realData.s2}</span></span>`;
+                    if (isLive) color = "#22c55e";
+
+                    const baseMinute = realData.minute ? parseInt(realData.minute) : null;
+                    const snapshotTime = Date.now();
+
+                    const renderMarker = () => {
+                        let minStr = '';
+                        if (isLive && baseMinute !== null) {
+                            const elapsed = Math.floor((Date.now() - snapshotTime) / 60000);
+                            minStr = `(${baseMinute + elapsed}')`;
+                        }
+                        markerEl.innerHTML = `<span style="color:${color}; ${isLive ? 'animation:pulse 2s infinite;' : ''}">${estadoTxt} ${minStr} &nbsp;|&nbsp; <span style="font-size:1.3rem; color:#fff; font-weight:900;">${realData.s1} - ${realData.s2}</span></span>`;
+                    };
+
+                    renderMarker(); // Mostrar inmediatamente
+
+                    // Auto-incrementar minuto cada 30s cuando el partido está en vivo
+                    if (isLive && baseMinute !== null) {
+                        liveTickerIntervals[m.id] = setInterval(() => {
+                            renderMarker();
+                            updateLeaderboardLiveStatus(); // Refrescar timestamp del leaderboard
+                        }, 30000);
+                    }
                 }
             }
         });
     }
 
     function renderLeaderboard() {
-        // Ejecutar Matemáticas Rápidamente
+        // --- Indicador de estado en tiempo real ---
+        let statusEl = document.getElementById('leaderboard-status');
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'leaderboard-status';
+            statusEl.style.cssText = 'text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--text-muted); padding:0.4rem 1rem;';
+            const glassDiv = document.querySelector('#leaderboard-container .glass');
+            if (glassDiv) glassDiv.insertAdjacentElement('afterend', statusEl);
+        }
+        updateLeaderboardLiveStatus();
+
+        // Flash suave para notificar que los datos se actualizaron
+        const tableEl = document.querySelector('.leaderboard-table');
+        if (tableEl) {
+            tableEl.style.transition = 'opacity 0.25s';
+            tableEl.style.opacity = '0.5';
+            setTimeout(() => { tableEl.style.opacity = '1'; }, 250);
+        }
+
+        // --- Calcular puntos ---
         Object.keys(usersDataCache).forEach(uid => {
             usersDataCache[uid].pts = 0;
             const userPreds = lastPreds[uid];
@@ -582,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ranking.forEach((u, idx) => {
             const tr = document.createElement('tr');
             if(idx < 3) tr.className = 'top-3';
-            let viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="padding: 0.3rem 0.6rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.1); color: var(--primary); cursor: pointer; transition: 0.2s;">👁️ Ver</button>`;
+            let viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="width:72px; height:34px; font-size:0.85rem; border-radius:6px; border:1px solid var(--primary); background:rgba(56,189,248,0.1); color:var(--primary); cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0;">👁️ Ver</button>`;
             
             tr.innerHTML = `
                 <td style="font-weight: bold; width: 60px; text-align: center;">${idx + 1}</td>
