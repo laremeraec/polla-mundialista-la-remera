@@ -18,12 +18,16 @@
             <a href="playoffs.html" style="color: var(--primary); font-weight: bold;">Polla Repechaje</a>
             <a href="#como-jugar">Cómo Jugar</a>
             <a href="#premios">Premios</a>
-            <a href="https://instagram.com/laremera" target="_blank" aria-label="Instagram">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-            </a>
-            <a href="https://wa.me/593986604560" target="_blank" aria-label="WhatsApp">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-            </a>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="https://instagram.com/laremera" target="_blank" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+                <a href="https://wa.me/593986604560" target="_blank" aria-label="WhatsApp" style="color: var(--primary);">
+                    <svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
+                       <path d="M12.01 2.002c-5.522 0-10 4.478-10 10 0 1.748.455 3.424 1.312 4.936L2 22l5.176-1.353c1.472.8 3.09 1.222 4.834 1.222 5.522 0 10-4.479 10-10s-4.478-10-10-10zm.01 16.382c-1.42 0-2.813-.36-4.04-1.042l-.29-.162-2.997.785.801-2.923-.178-.283A8.253 8.253 0 0 1 3.75 12c0-4.542 3.696-8.238 8.24-8.238 4.544 0 8.24 3.696 8.24 8.238 0 4.542-3.696 8.238-8.24 8.238zm4.52-6.142c-.247-.123-1.464-.72-1.691-.801-.227-.082-.394-.123-.56.123-.166.246-.64 .801-.784.966-.145.164-.29.185-.537.061-1.332-.676-2.454-1.572-3.17-2.905-.145-.246.155-.224.52-.958.082-.164.041-.308-.021-.43-.062-.123-.56-1.35-.768-1.848-.201-.484-.406-.418-.56-.426-.145-.008-.31-.01-.476-.01-.165 0-.435.062-.662.308-.227.246-.867.847-.867 2.064s.888 2.395 1.012 2.558c.124.164 1.745 2.662 4.227 3.732.592.256 1.054.409 1.415.523.593.189 1.133.162 1.558.098.473-.072 1.464-.6 1.67-1.18.207-.58.207-1.077.145-1.18-.062-.103-.227-.164-.474-.287z"/>
+                    </svg>
+                </a>
+            </div>
             <button class="btn-primary login-btn">Iniciar Sesión</button>
         </div>
     </nav>
@@ -164,9 +168,15 @@
             <p style="text-align: center; margin-bottom: 2rem; color: var(--text-muted)">Únete y demuestra tus conocimientos mundialistas</p>
             
             <form id="registerForm">
-                <div class="form-group">
-                    <label for="fullName">Nombre Completo</label>
-                    <input type="text" id="fullName" name="nombre_completo" required>
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="firstName">Nombres</label>
+                        <input type="text" id="firstName" name="nombres" required>
+                    </div>
+                    <div class="col">
+                        <label for="lastName">Apellidos</label>
+                        <input type="text" id="lastName" name="apellidos" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="email">Correo Electrónico</label>
@@ -192,13 +202,75 @@
                         <input type="date" id="dob" name="fecha_nacimiento" required>
                     </div>
                 </div>
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="city">Ciudad</label>
+                        <input type="text" id="city" name="ciudad" placeholder="Ej. Guayaquil" required>
+                    </div>
+                    <div class="col">
+                        <label for="province">Provincia</label>
+                        <input type="text" id="province" name="provincia" placeholder="Ej. Guayas" required>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="localTeam">Equipo Favorito de Ecuador</label>
-                    <input type="text" id="localTeam" name="equipo_ecuador" placeholder="Ej. Barcelona, Emelec, LDU..." required>
+                    <select id="localTeam" name="equipo_ecuador" required>
+                        <option value="" disabled selected>Selecciona tu equipo...</option>
+                        <option value="Aucas">Aucas</option>
+                        <option value="BSC">BSC</option>
+                        <option value="Católica">Católica</option>
+                        <option value="Cuenca">Cuenca</option>
+                        <option value="Delfín">Delfín</option>
+                        <option value="El Nacional">El Nacional</option>
+                        <option value="Emelec">Emelec</option>
+                        <option value="Guayaquil City">Guayaquil City</option>
+                        <option value="IDV">IDV</option>
+                        <option value="LDU">LDU</option>
+                        <option value="Leones">Leones</option>
+                        <option value="Libertad">Libertad</option>
+                        <option value="Liga de Portoviejo">Liga de Portoviejo</option>
+                        <option value="Macará">Macará</option>
+                        <option value="Manta">Manta</option>
+                        <option value="Mushuc Runa">Mushuc Runa</option>
+                        <option value="Orense">Orense</option>
+                        <option value="SDQ">SDQ</option>
+                        <option value="Técnico Universitario">Técnico Universitario</option>
+                        <option value="Otros">Otros (Escribir)</option>
+                    </select>
+                    <input type="text" id="otherLocalTeam" name="otro_equipo_ecuador" placeholder="Escribe el nombre del equipo..." style="display: none; margin-top: 10px;">
                 </div>
                 <div class="form-group">
                     <label for="internationalTeam">Equipo Favorito Internacional</label>
-                    <input type="text" id="internationalTeam" name="equipo_internacional" placeholder="Ej. Real Madrid, Boca Juniors..." required>
+                    <select id="internationalTeam" name="equipo_internacional" required>
+                        <option value="" disabled selected>Selecciona tu equipo...</option>
+                        <option value="AC Milan">AC Milan</option>
+                        <option value="Arsenal">Arsenal</option>
+                        <option value="Atlético de Madrid">Atlético de Madrid</option>
+                        <option value="Barcelona">Barcelona</option>
+                        <option value="Bayern Munich">Bayern Munich</option>
+                        <option value="Boca Juniors">Boca Juniors</option>
+                        <option value="Borussia Dortmund">Borussia Dortmund</option>
+                        <option value="Chelsea">Chelsea</option>
+                        <option value="Flamengo">Flamengo</option>
+                        <option value="Inter de Milán">Inter de Milán</option>
+                        <option value="Juventus">Juventus</option>
+                        <option value="Liverpool">Liverpool</option>
+                        <option value="Manchester City">Manchester City</option>
+                        <option value="Manchester United">Manchester United</option>
+                        <option value="Napoli">Napoli</option>
+                        <option value="PSG">PSG</option>
+                        <option value="Palmeiras">Palmeiras</option>
+                        <option value="Real Madrid">Real Madrid</option>
+                        <option value="River Plate">River Plate</option>
+                        <option value="Roma">Roma</option>
+                        <option value="Tottenham">Tottenham</option>
+                        <option value="Otros">Otros (Escribir)</option>
+                    </select>
+                    <input type="text" id="otherInternationalTeam" name="otro_equipo_internacional" placeholder="Escribe el nombre del equipo..." style="display: none; margin-top: 10px;">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="confirmFullName" name="confirma_nombre" required>
+                    <label for="confirmFullName">Confirmo que en el registro he incluido todos mis nombres (en caso de tener más de uno) y dos apellidos</label>
                 </div>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="isEcuadorian" name="es_de_ecuador" value="Si" required>

@@ -18,6 +18,38 @@ const db = getFirestore(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
+
+    // Configuración interactiva del selector de equipos
+    const selectLocalTeam = document.getElementById('localTeam');
+    const inputOtherLocalTeam = document.getElementById('otherLocalTeam');
+    if(selectLocalTeam && inputOtherLocalTeam) {
+        selectLocalTeam.addEventListener('change', (e) => {
+            if(e.target.value === "Otros") {
+                inputOtherLocalTeam.style.display = "block";
+                inputOtherLocalTeam.required = true;
+            } else {
+                inputOtherLocalTeam.style.display = "none";
+                inputOtherLocalTeam.required = false;
+                inputOtherLocalTeam.value = "";
+            }
+        });
+    }
+
+    const selectIntTeam = document.getElementById('internationalTeam');
+    const inputOtherIntTeam = document.getElementById('otherInternationalTeam');
+    if(selectIntTeam && inputOtherIntTeam) {
+        selectIntTeam.addEventListener('change', (e) => {
+            if(e.target.value === "Otros") {
+                inputOtherIntTeam.style.display = "block";
+                inputOtherIntTeam.required = true;
+            } else {
+                inputOtherIntTeam.style.display = "none";
+                inputOtherIntTeam.required = false;
+                inputOtherIntTeam.value = "";
+            }
+        });
+    }
+
     const loginForm = document.getElementById('loginForm');
     const registerModal = document.getElementById('registerModal');
     const loginModal = document.getElementById('loginModal');
@@ -145,12 +177,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const email = document.getElementById('email').value;
-        const fullName = document.getElementById('fullName').value;
+        const email = document.getElementById('email').value.toLowerCase().trim();
+        let firstName = document.getElementById('firstName').value.trim();
+        let lastName = document.getElementById('lastName').value.trim();
+        let fullName = `${firstName} ${lastName}`;
+        fullName = fullName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         const phone = document.getElementById('phone').value;
         const dob = document.getElementById('dob').value;
-        const localTeam = document.getElementById('localTeam').value;
-        const internationalTeam = document.getElementById('internationalTeam').value;
+        let city = document.getElementById('city').value.trim();
+        city = city.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        let province = document.getElementById('province').value.trim();
+        province = province.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        let localTeam = document.getElementById('localTeam').value;
+        if(localTeam === "Otros") {
+            localTeam = document.getElementById('otherLocalTeam').value.trim();
+        }
+        let internationalTeam = document.getElementById('internationalTeam').value;
+        if(internationalTeam === "Otros") {
+            internationalTeam = document.getElementById('otherInternationalTeam').value.trim();
+        }
         const isEcuadorian = document.getElementById('isEcuadorian').checked;
 
         const submitBtn = registerForm.querySelector('button[type="submit"]');
@@ -169,6 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 email: email,
                 telefono: phone,
                 fecha_nacimiento: dob,
+                ciudad: city,
+                provincia: province,
                 equipo_ecuador: localTeam,
                 equipo_internacional: internationalTeam,
                 es_de_ecuador: isEcuadorian,
@@ -446,6 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let usersData = {};
             usersSnap.forEach(userDoc => {
                 let nText = userDoc.data().nombre_completo || userDoc.data().nombre || "Competidor Anónimo";
+                nText = nText.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 usersData[userDoc.id] = { 
                     uid: userDoc.id,
@@ -498,7 +546,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Ordenar Ranking de mayor a menor
-            const ranking = Object.values(usersData).sort((a, b) => b.pts - a.pts);
+            const ranking = Object.values(usersData).sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                return a.nombre.localeCompare(b.nombre);
+            });
             
             // Dibujar la tabla
             leaderboardBody.innerHTML = '';
@@ -561,11 +612,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(btnSpan) btnSpan.textContent = "Descargando...";
                     
                     const usersSnap = await getDocs(collection(db, "usuarios"));
-                    let csv = "ID_Usuario,Nombre Completo,Correo,Telefono,Fecha De Nacimiento,Es de Ecuador,Equipo Ecuador,Equipo Internacional,Fecha Registro\n";
+                    let csv = "ID_Usuario,Nombre Completo,Correo,Telefono,Fecha De Nacimiento,Ciudad,Provincia,Es de Ecuador,Equipo Ecuador,Equipo Internacional,Fecha Registro\n";
                     
                     usersSnap.forEach(docSnap => {
                         const data = docSnap.data();
-                        csv += `"${docSnap.id}","${data.nombre_completo || ''}","${data.email || ''}","${data.telefono || ''}","${data.fecha_nacimiento || ''}","${data.es_de_ecuador ? 'Si' : 'No'}","${data.equipo_ecuador || ''}","${data.equipo_internacional || ''}","${data.fecha_registro || ''}"\n`;
+                        csv += `"${docSnap.id}","${data.nombre_completo || ''}","${data.email || ''}","${data.telefono || ''}","${data.fecha_nacimiento || ''}","${data.ciudad || ''}","${data.provincia || ''}","${data.es_de_ecuador ? 'Si' : 'No'}","${data.equipo_ecuador || ''}","${data.equipo_internacional || ''}","${data.fecha_registro || ''}"\n`;
                     });
                     
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
