@@ -603,7 +603,22 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .nav-links { display: none; }
+    .navbar {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .nav-links { 
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 1.5rem;
+    }
+    .nav-links a {
+        margin-right: 0; /* Override the desktop margin */
+        font-size: 0.95rem;
+    }
     .hero h1 { font-size: 3rem; }
     .match-card { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; }
     
