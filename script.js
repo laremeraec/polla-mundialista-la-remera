@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoEl = document.querySelector('.logo');
     if (logoEl) {
         logoEl.addEventListener('dblclick', async () => {
-            const pwd = prompt("🔑 Código de Administrador para descargar DB:");
+            const pwd = prompt("🔑 Código de Administrador:");
             if (pwd === "CarlosPancho") {
                 try {
                     const btnSpan = logoEl.querySelector('span');
