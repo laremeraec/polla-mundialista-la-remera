@@ -336,8 +336,15 @@ document.addEventListener('DOMContentLoaded', () => {
             viewerMatches.innerHTML = '<p style="text-align:center; color: var(--text-muted);">Sin partidos disponibles en este momento.</p>';
         } else {
             matchesList.forEach(match => {
+                const matchStart = new Date(match.time);
+                const isMatchStarted = new Date() >= matchStart;
                 const p = userData.predicciones[match.id] || { s1: '-', s2: '-' };
                 
+                // Si el partido ya empezó, revelamos el pronóstico. Si no, candado.
+                const scoreHTML = isMatchStarted 
+                    ? `${p.s1} - ${p.s2}`
+                    : `<span title="Por transparencia, se revela al iniciar el partido">🔒 Seguro</span>`;
+
                 const card = document.createElement('div');
                 card.style.background = 'rgba(0,0,0,0.3)';
                 card.style.padding = '1rem';
@@ -348,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 card.innerHTML = `
                     <div style="flex:1; text-align:right;">${match.team1} <img src="https://flagcdn.com/w40/${match.flag1}.png" style="width:20px; vertical-align:middle; margin-left:5px;"></div>
-                    <div style="padding: 0 15px; font-weight:bold; color:var(--primary); font-size:1.2rem;">${p.s1} - ${p.s2}</div>
+                    <div style="padding: 0 15px; font-weight:bold; color:var(--primary); font-size:1.1rem; text-align:center;">${scoreHTML}</div>
                     <div style="flex:1; text-align:left;"><img src="https://flagcdn.com/w40/${match.flag2}.png" style="width:20px; vertical-align:middle; margin-right:5px;"> ${match.team2}</div>
                 `;
                 viewerMatches.appendChild(card);
@@ -571,16 +578,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        const canViewOthers = new Date() >= CUTOFF_DATE;
+        const canViewOthers = true; // Ahora siempre se pueder abrir el modal (el bloqueo es por partido interno)
         ranking.forEach((u, idx) => {
             const tr = document.createElement('tr');
             if(idx < 3) tr.className = 'top-3';
-            let viewBtnHtml = '';
-            if (canViewOthers) {
-                viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="padding: 0.3rem 0.6rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.1); color: var(--primary); cursor: pointer; transition: 0.2s;">👁️ Ver</button>`;
-            } else {
-                viewBtnHtml = `<span title="Por transparencia anti-trampas, se revelan al pitar el primer partido" style="opacity: 0.4; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 6px; cursor: not-allowed;">🔒 Seguro</span>`;
-            }
+            let viewBtnHtml = `<button class="view-preds-btn" data-uid="${u.uid}" title="Auditar Pronósticos" style="padding: 0.3rem 0.6rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.1); color: var(--primary); cursor: pointer; transition: 0.2s;">👁️ Ver</button>`;
+            
             tr.innerHTML = `
                 <td style="font-weight: bold; width: 60px; text-align: center;">${idx + 1}</td>
                 <td style="font-weight: 500;">
@@ -594,14 +597,12 @@ document.addEventListener('DOMContentLoaded', () => {
             leaderboardBody.appendChild(tr);
         });
 
-        if (canViewOthers) {
-            document.querySelectorAll('.view-preds-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const selectedUid = btn.getAttribute('data-uid');
-                    if(usersDataCache[selectedUid]) openViewerModal(usersDataCache[selectedUid]);
-                });
+        document.querySelectorAll('.view-preds-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const selectedUid = btn.getAttribute('data-uid');
+                if(usersDataCache[selectedUid]) openViewerModal(usersDataCache[selectedUid]);
             });
-        }
+        });
     }
 
     async function loadLeaderboard() {
