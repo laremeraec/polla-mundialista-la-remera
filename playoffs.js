@@ -34,16 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Open Register Modal
     registerBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            registerModal.classList.add('show');
-            loginModal.classList.remove('show');
+            if (!isUserRegistered) {
+                registerModal.classList.add('show');
+                loginModal.classList.remove('show');
+            }
         });
     });
 
     // Open Login Modal
     loginBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            loginModal.classList.add('show');
-            registerModal.classList.remove('show');
+            if (!isUserRegistered) {
+                loginModal.classList.add('show');
+                registerModal.classList.remove('show');
+            }
         });
     });
 
@@ -510,7 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!hasLoadedUsers) {
                 const usersSnap = await getDocs(collection(db, "usuarios"));
                 usersSnap.forEach(userDoc => {
-                    usersDataCache[userDoc.id] = { uid: userDoc.id, nombre: userDoc.data().nombre_completo || "Competidor Anónimo", pts: 0, predicciones: {} };
+                    let nText = userDoc.data().nombre_completo || userDoc.data().nombre || "Competidor Anónimo";
+                    usersDataCache[userDoc.id] = { uid: userDoc.id, nombre: nText, pts: 0, predicciones: {} };
                 });
                 hasLoadedUsers = true;
             }

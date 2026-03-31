@@ -34,16 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Open Register Modal
     registerBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            registerModal.classList.add('show');
-            loginModal.classList.remove('show');
+            if (!isUserRegistered) {
+                registerModal.classList.add('show');
+                loginModal.classList.remove('show');
+            }
         });
     });
 
     // Open Login Modal
     loginBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            loginModal.classList.add('show');
-            registerModal.classList.remove('show');
+            if (!isUserRegistered) {
+                loginModal.classList.add('show');
+                registerModal.classList.remove('show');
+            }
         });
     });
 
@@ -441,9 +445,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let usersData = {};
             usersSnap.forEach(userDoc => {
+                let nText = userDoc.data().nombre_completo || userDoc.data().nombre || "Competidor Anónimo";
+
                 usersData[userDoc.id] = { 
                     uid: userDoc.id,
-                    nombre: userDoc.data().nombre_completo || "Competidor Anónimo", 
+                    nombre: nText, 
                     pts: 0,
                     predicciones: {}
                 };
@@ -543,4 +549,41 @@ document.addEventListener('DOMContentLoaded', () => {
             leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #ff4444;">Hubo un error de conexión al cargar las posiciones mundiales. Intenta recargar.</td></tr>';
         }
     }
+
+    // --- ADMIN BOTÓN SECRETO (Descarga CSV) ---
+    const logoEl = document.querySelector('.logo');
+    if (logoEl) {
+        logoEl.addEventListener('dblclick', async () => {
+            const pwd = prompt("🔑 Código de Administrador para descargar DB:");
+            if (pwd === "CarlosPancho") {
+                try {
+                    const btnSpan = logoEl.querySelector('span');
+                    if(btnSpan) btnSpan.textContent = "Descargando...";
+                    
+                    const usersSnap = await getDocs(collection(db, "usuarios"));
+                    let csv = "ID_Usuario,Nombre Completo,Correo,Telefono,Fecha De Nacimiento,Es de Ecuador,Equipo Ecuador,Equipo Internacional,Fecha Registro\n";
+                    
+                    usersSnap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        csv += `"${docSnap.id}","${data.nombre_completo || ''}","${data.email || ''}","${data.telefono || ''}","${data.fecha_nacimiento || ''}","${data.es_de_ecuador ? 'Si' : 'No'}","${data.equipo_ecuador || ''}","${data.equipo_internacional || ''}","${data.fecha_registro || ''}"\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Base_Usuarios_PollaMundialista.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    if(btnSpan) btnSpan.textContent = "La Remera EC";
+                } catch(e) {
+                    alert('Error descargando: ' + e.message);
+                }
+            } else if (pwd !== null) {
+                alert("Clave incorrecta. Acceso denegado.");
+            }
+        });
+    }
+
 });
