@@ -75,8 +75,13 @@ async function syncResults() {
 
                     // Si el partido está iniciado o finalizado, guardamos el resultado
                     if (["1H", "2H", "HT", "ET", "P", "FT", "AET", "PEN"].includes(match.fixture.status.short)) {
-                        newScores[id] = { s1: s1.toString(), s2: s2.toString() };
-                        console.log(`Actualizando [${id}]: ${homeName} ${match.goals.home} - ${match.goals.away} ${awayName}`);
+                        newScores[id] = { 
+                            s1: s1.toString(), 
+                            s2: s2.toString(),
+                            status: match.fixture.status.short,
+                            minute: match.fixture.status.elapsed || null
+                        };
+                        console.log(`Actualizando [${id}]: ${homeName} ${match.goals.home} - ${match.goals.away} ${awayName} (${match.fixture.status.short} ${match.fixture.status.elapsed || ''}')`);
                     }
                 }
             }

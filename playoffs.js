@@ -314,12 +314,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Lista de partidos (Playoffs Reales)
     const matchesList = [
-        { id: "p1", team1: "Bosnia", flag1: "ba", team2: "Italia", flag2: "it" },
-        { id: "p2", team1: "Suecia", flag1: "se", team2: "Polonia", flag2: "pl" },
-        { id: "p3", team1: "Kosovo", flag1: "xk", team2: "Türkiye", flag2: "tr" },
-        { id: "p4", team1: "Chequia", flag1: "cz", team2: "Dinamarca", flag2: "dk" },
-        { id: "p5", team1: "RD Congo", flag1: "cd", team2: "Jamaica", flag2: "jm" },
-        { id: "p6", team1: "Irak", flag1: "iq", team2: "Bolivia", flag2: "bo" }
+        { id: "p1", team1: "Bosnia", flag1: "ba", team2: "Italia", flag2: "it", time: "2026-03-31T13:45:00-05:00", displayTime: "13:45 (ECU)" },
+        { id: "p2", team1: "Suecia", flag1: "se", team2: "Polonia", flag2: "pl", time: "2026-03-31T13:45:00-05:00", displayTime: "13:45 (ECU)" },
+        { id: "p3", team1: "Kosovo", flag1: "xk", team2: "Türkiye", flag2: "tr", time: "2026-03-31T13:45:00-05:00", displayTime: "13:45 (ECU)" },
+        { id: "p4", team1: "Chequia", flag1: "cz", team2: "Dinamarca", flag2: "dk", time: "2026-03-31T13:45:00-05:00", displayTime: "13:45 (ECU)" },
+        { id: "p5", team1: "RD Congo", flag1: "cd", team2: "Jamaica", flag2: "jm", time: "2026-03-31T16:00:00-05:00", displayTime: "16:00 (ECU)" },
+        { id: "p6", team1: "Irak", flag1: "iq", team2: "Bolivia", flag2: "bo", time: "2026-03-31T22:00:00-05:00", displayTime: "22:00 (ECU)" }
     ];
     
     // Nodos del Visualizador Público
@@ -410,18 +410,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.className = 'match-card glass';
                 
                 const p = savedPredictions[match.id] || { s1: '', s2: '' };
+                const isMatchLocked = new Date() >= new Date(match.time);
+                const isInputDisabled = isClosed || isMatchLocked;
 
                 card.innerHTML = `
-                    <div class="team">
-                        <img src="https://flagcdn.com/w80/${match.flag1}.png" class="flag-img" alt="${match.team1}">
-                        <span class="team-name">${match.team1}</span>
-                        <input type="number" min="0" class="score-input p-input" data-match="${match.id}" data-team="1" placeholder="-" value="${p.s1}" ${isClosed ? 'disabled' : ''}>
+                    <div class="match-time" style="text-align: center; color: var(--gold-secondary); font-size: 0.85rem; margin-bottom: 10px; width: 100%;">
+                        <i class="fas fa-clock"></i> ${match.displayTime} ${isMatchLocked ? '<span style="color:var(--danger);font-weight:bold;margin-left:5px;">(Cerrado)</span>' : ''}
                     </div>
-                    <div class="vs">VS</div>
-                    <div class="team">
-                        <input type="number" min="0" class="score-input p-input" data-match="${match.id}" data-team="2" placeholder="-" value="${p.s2}" ${isClosed ? 'disabled' : ''}>
-                        <span class="team-name">${match.team2}</span>
-                        <img src="https://flagcdn.com/w80/${match.flag2}.png" class="flag-img" alt="${match.team2}">
+                    <div id="liveMarker_${match.id}" style="width: 100%; text-align: center; font-size: 1.1rem; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;"></div>
+                    <div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">
+                        <div class="team">
+                            <img src="https://flagcdn.com/w80/${match.flag1}.png" class="flag-img" alt="${match.team1}">
+                            <span class="team-name">${match.team1}</span>
+                            <input type="number" min="0" class="score-input p-input" data-match="${match.id}" data-team="1" placeholder="-" value="${p.s1}" ${isInputDisabled ? 'disabled' : ''} style="${isMatchLocked ? 'opacity:0.5; background:var(--card-bg);' : ''}">
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <input type="number" min="0" class="score-input p-input" data-match="${match.id}" data-team="2" placeholder="-" value="${p.s2}" ${isInputDisabled ? 'disabled' : ''} style="${isMatchLocked ? 'opacity:0.5; background:var(--card-bg);' : ''}">
+                            <span class="team-name">${match.team2}</span>
+                            <img src="https://flagcdn.com/w80/${match.flag2}.png" class="flag-img" alt="${match.team2}">
+                        </div>
                     </div>
                 `;
                 matchesContainer.appendChild(card);
@@ -442,13 +450,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const newPredictions = {};
             
             matchesList.forEach(m => {
-                newPredictions[m.id] = { s1: '', s2: '' };
+                const isMatchLocked = new Date() >= new Date(m.time);
+                if (isMatchLocked) {
+                    newPredictions[m.id] = savedPredictions[m.id] || { s1: '', s2: '' };
+                } else {
+                    newPredictions[m.id] = { s1: '', s2: '' };
+                }
             });
 
             inputs.forEach(input => {
                 const matchId = input.getAttribute('data-match');
-                const team = input.getAttribute('data-team');
-                newPredictions[matchId][`s${team}`] = input.value;
+                const matchDef = matchesList.find(m => m.id === matchId);
+                const isMatchLocked = matchDef && new Date() >= new Date(matchDef.time);
+                
+                if (!isMatchLocked) {
+                    const team = input.getAttribute('data-team');
+                    newPredictions[matchId][`s${team}`] = input.value;
+                }
             });
 
             try {
@@ -476,6 +494,36 @@ document.addEventListener('DOMContentLoaded', () => {
     let usersDataCache = {};
     let lastResultados = {};
     let lastPreds = {};
+
+    function updateLiveMatchesUI() {
+        matchesList.forEach(m => {
+            const realData = lastResultados[m.id];
+            if (realData) {
+                let markerEl = document.getElementById(`liveMarker_${m.id}`);
+                if (markerEl) {
+                    let estadoTxt = realData.status;
+                    let color = "var(--primary)";
+                    let isLive = false;
+
+                    if(estadoTxt === "1H") { estadoTxt = "1er Tiempo"; isLive = true; }
+                    if(estadoTxt === "2H") { estadoTxt = "2do Tiempo"; isLive = true; }
+                    if(estadoTxt === "HT") { estadoTxt = "Medio Tiempo"; isLive = true; }
+                    if(estadoTxt === "ET") { estadoTxt = "Tiempo Extra"; isLive = true; }
+                    if(estadoTxt === "P" || estadoTxt === "PEN") { estadoTxt = "Penales"; isLive = true; }
+                    
+                    if(estadoTxt === "FT" || estadoTxt === "AET") {
+                        estadoTxt = "FINALIZADO";
+                        color = "#9ca3af"; 
+                    } else if (isLive) {
+                        color = "#22c55e"; 
+                    }
+
+                    const minStr = realData.minute ? `(${realData.minute}')` : '';
+                    markerEl.innerHTML = `<span style="color: ${color}; ${isLive ? 'animation: pulse 2s infinite;' : ''}">${estadoTxt} ${minStr} &nbsp;|&nbsp; <span style="font-size:1.3rem; color:#fff;">${realData.s1} - ${realData.s2}</span></span>`;
+                }
+            }
+        });
+    }
 
     function renderLeaderboard() {
         // Ejecutar Matemáticas Rápidamente
@@ -573,7 +621,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Real-time listener para Resultados de la Maquina/Admin
             onSnapshot(doc(db, "admin_playoff", "resultados"), (docSnap) => {
-                if(docSnap.exists() && docSnap.data().partidos) lastResultados = docSnap.data().partidos;
+                if(docSnap.exists() && docSnap.data().partidos) {
+                    lastResultados = docSnap.data().partidos;
+                    updateLiveMatchesUI();
+                }
                 renderLeaderboard();
             });
 
