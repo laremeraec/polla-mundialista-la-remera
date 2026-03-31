@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Únete a la mejor Polla Mundialista. Predice los resultados, acumula puntos y gana increíbles premios.">
+    <title>Polla Mundialista La Remera EC | Predice y Gana</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="assets/logo-rem.jpg" alt="La Remera EC" class="brand-logo">
+            Polla<span>Mundialista</span>
+        </div>
+        <div class="nav-links">
+            <a href="playoffs.html" style="color: var(--primary); font-weight: bold;">Polla Repechaje</a>
+            <a href="#como-jugar">Cómo Jugar</a>
+            <a href="#premios">Premios</a>
+            <a href="https://instagram.com/laremera" target="_blank" aria-label="Instagram">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            </a>
+            <a href="https://wa.me/593986604560" target="_blank" aria-label="WhatsApp">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            </a>
+            <button class="btn-primary login-btn">Iniciar Sesión</button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="free-badge animate-up">🌟 Inscripción 100% Gratis</div>
+            <h1 class="animate-up delay-1">Polla Mundialista <br><span class="highlight">La Remera EC</span></h1>
+            <p class="animate-up delay-1">Compite con los mejores, puntúa en cada partido y conviértete en el campeón indiscutible de nuestra Polla.</p>
+            <button class="btn-primary btn-large animate-up delay-2 register-btn">Unirse Ahora</button>
+            <p class="cta-subtext animate-up delay-2">El pitazo inicial se acerca. No te quedes en la banca.</p>
+        </div>
+        <div class="hero-overlay"></div>
+    </header>
+
+    <!-- Dashboard Interactivo (Oculto si no hay sesión) -->
+    <section id="dashboard" class="hidden" style="padding: 6rem 5%; background: var(--bg-dark);">
+        <h2 class="section-title">Tus <span class="highlight">Pronósticos</span></h2>
+        <p style="text-align: center; color: var(--text-muted); margin-top: -2rem; margin-bottom: 3rem;">
+            Tienes hasta el silbato inicial del Mundial para editar tus marcadores.
+        </p>
+        <div id="matches-container" style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">
+            <!-- Contenido Inyectado via JS -->
+        </div>
+        <div style="text-align: center; margin-top: 3rem;">
+            <button id="savePredictionsBtn" class="btn-primary btn-large">Guardar Pronósticos</button>
+        </div>
+
+        <!-- Leaderboard (Tabla de posiciones privada) -->
+        <div id="leaderboard-container" style="margin-top: 6rem; width: 100%; max-width: 800px; display: none; margin-left: auto; margin-right: auto;">
+            <h2 class="section-title" style="margin-bottom: 2rem;">Tabla de <span class="highlight">Posiciones</span></h2>
+            <div class="glass" style="padding: 1.5rem; overflow-x: auto; border-radius: 16px;">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Jugador</th>
+                            <th style="text-align: right;">Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Filas inyectadas via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 1.5rem;">
+                Las posiciones se actualizan automáticamente después de cada partido según los Resultados Oficiales.
+            </p>
+        </div>
+    </section>
+
+    <section id="como-jugar" class="features">
+        <h2 class="section-title">¿Cómo Funciona?</h2>
+        <div class="cards-container">
+            <div class="feature-card glass">
+                <div class="icon">⚽</div>
+                <h3>Predice</h3>
+                <p>Pronostica el resultado de cada partido antes de que comience.</p>
+            </div>
+            <div class="feature-card glass">
+                <div class="icon">📈</div>
+                <h3>Puntúa</h3>
+                <p>Gana puntos por acertar el ganador y el marcador exacto.</p>
+            </div>
+            <div class="feature-card glass">
+                <div class="icon">🏆</div>
+                <h3>Gana</h3>
+                <p>Lidera la tabla de posiciones y gana increíbles premios.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="reglas-puntuacion" class="features" style="background: rgba(10, 14, 23, 0.5);">
+        <h2 class="section-title">Sistema de <span class="highlight">Puntuación</span></h2>
+        <div class="cards-container">
+            <div class="feature-card glass animate-up delay-1" style="border-color: rgba(255, 215, 0, 0.3);">
+                <div class="icon">🎯</div>
+                <h3 style="color: #ffd700;">Marcador Exacto</h3>
+                <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #ffd700;">+3 <span style="font-size: 1rem; color: var(--text-muted);">Pts</span></h2>
+                <p>Aciertas el número exacto de goles.<br><small style="color: var(--text-muted); display: block; margin-top: 10px;"><b>Ejemplo:</b> Dices que gana Ecuador 2 a 0, y el partido termina exactamente 2 a 0.</small></p>
+            </div>
+            <div class="feature-card glass animate-up delay-2" style="border-color: rgba(192, 192, 192, 0.3);">
+                <div class="icon">✅</div>
+                <h3 style="color: #c0c0c0;">Tendencia / Ganador</h3>
+                <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #c0c0c0;">+1 <span style="font-size: 1rem; color: var(--text-muted);">Pt</span></h2>
+                <p>Aciertas al país ganador (o empate), pero fallas los goles.<br><small style="color: var(--text-muted); display: block; margin-top: 10px;"><b>Ejemplo:</b> Dices que gana Ecuador 3 a 0, pero finaliza 1 a 0. ¡Sumas por tu buena intuición!</small></p>
+            </div>
+            <div class="feature-card glass animate-up delay-3" style="border-color: rgba(255, 255, 255, 0.05); opacity: 0.8;">
+                <div class="icon">❌</div>
+                <h3 style="color: #94a3b8;">Fallo Total</h3>
+                <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #94a3b8;">0 <span style="font-size: 1rem; color: var(--text-muted);">Pts</span></h2>
+                <p>Te equivocas completamente de resultado.<br><small style="color: var(--text-muted); display: block; margin-top: 10px;"><b>Ejemplo:</b> Predijiste que ganaba Ecuador 2 a 1, pero terminó ganando Senegal (o empatando).</small></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="premios" class="prizes-section demo-section">
+        <h2 class="section-title">Premios Increíbles</h2>
+        <div class="cards-container podium">
+            <!-- 2do Lugar -->
+            <div class="prize-card glass silver">
+                <div class="medal">👕</div>
+                <h3>2do Lugar</h3>
+                <p>Cupón de $100</p>
+                <small>Para consumo en La Remera EC</small>
+            </div>
+            <!-- 1er Lugar -->
+            <div class="prize-card glass gold main-prize">
+                <div class="medal"><img src="assets/tv-prize.png" alt="Smart TV 43" class="prize-logo-main"></div>
+                <h3>1er Lugar</h3>
+                <p>TV 43 Pulgadas</p>
+                <small>El mejor pronóstico de todos</small>
+            </div>
+            <!-- 3er Lugar -->
+            <div class="prize-card glass bronze">
+                <div class="medal"><img src="assets/smartfit-logo.png" alt="Smart Fit Logo" class="prize-logo"></div>
+                <h3>3er Lugar</h3>
+                <p>1 Mes Gratis</p>
+                <small>Entrenamiento en SmartFit</small>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Polla Mundialista La Remera EC. Todos los derechos reservados.</p>
+        <p style="margin-top: 10px;">
+            <a href="https://instagram.com/laremera" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">
+                Síguenos en Instagram
+            </a>
+        </p>
+    </footer>
+
+    <!-- Registration Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content glass">
+            <button class="close-modal">&times;</button>
+            <h2 class="section-title">Inscríbete <span class="highlight">Gratis</span></h2>
+            <p style="text-align: center; margin-bottom: 2rem; color: var(--text-muted)">Únete y demuestra tus conocimientos mundialistas</p>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="fullName">Nombre Completo</label>
+                    <input type="text" id="fullName" name="nombre_completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="registerPassword">Contraseña</label>
+                        <input type="password" id="registerPassword" name="password" required minlength="6">
+                    </div>
+                    <div class="col">
+                        <label for="confirmPassword">Confirmar Contraseña</label>
+                        <input type="password" id="confirmPassword" required minlength="6">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="phone">Celular</label>
+                        <input type="tel" id="phone" name="telefono" required>
+                    </div>
+                    <div class="col">
+                        <label for="dob">Fecha de Nacimiento</label>
+                        <input type="date" id="dob" name="fecha_nacimiento" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="localTeam">Equipo Favorito de Ecuador</label>
+                    <input type="text" id="localTeam" name="equipo_ecuador" placeholder="Ej. Barcelona, Emelec, LDU..." required>
+                </div>
+                <div class="form-group">
+                    <label for="internationalTeam">Equipo Favorito Internacional</label>
+                    <input type="text" id="internationalTeam" name="equipo_internacional" placeholder="Ej. Real Madrid, Boca Juniors..." required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="isEcuadorian" name="es_de_ecuador" value="Si" required>
+                    <label for="isEcuadorian">Confirmo que vivo en Ecuador y acepto que los premios son solo para residentes en este país</label>
+                </div>
+                <button type="submit" class="btn-primary w-100">Registrarme y Jugar</button>
+                <p class="modal-switch">¿Ya tienes cuenta? <a href="#" id="switchToLogin">Inicia Sesión</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content glass">
+            <button class="close-modal">&times;</button>
+            <h2 class="section-title">Iniciar <span class="highlight">Sesión</span></h2>
+            <p style="text-align: center; margin-bottom: 2rem; color: var(--text-muted)">Accede para ver y guardar tus pronósticos</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <div style="text-align: right; margin-top: -10px; margin-bottom: 1.5rem;">
+                    <a href="#" id="forgotPassword" class="forgot-pwd">¿Olvidaste tu contraseña?</a>
+                </div>
+                <button type="submit" class="btn-primary w-100">Ingresar</button>
+                <p class="modal-switch">¿No tienes cuenta? <a href="#" id="switchToRegister">Regístrate Gratis</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Public Viewer Modal (Transparencia) -->
+    <div class="modal" id="viewerModal">
+        <div class="modal-content glass" style="max-width: 600px;">
+            <button class="close-modal">&times;</button>
+            <h2 class="section-title" style="margin-bottom: 1rem; font-size: 2rem;">Auditoría de <br><span class="highlight" id="viewerName">Usuario</span></h2>
+            <p style="text-align: center; color: var(--text-muted);">Estás viendo los pronósticos oficiales registrados por este participante.</p>
+            <div id="viewerMatches" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+                <!-- Rellenado vía JS -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
