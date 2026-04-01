@@ -1,0 +1,44 @@
+name: AutoSync Polla Mundialista
+
+# Este script gratuito corre en los super-servidores de GitHub.
+# Le dice a la plataforma entera: "Oye, despierta, busca resultados y muere" cada cierto tiempo definido.
+
+on:
+  schedule:
+    # Corre cada 5 minutos durante el día de partidos.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # Esto te permitirá apretar un botón para "Forzar una sincronización" inmediatamente si lo deseas.
+
+jobs:
+  run-bot-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargando Código
+        uses: actions/checkout@v4
+
+      - name: Instalando Servidor Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalando Dependencias (Axios, Firebase)
+        run: |
+          cd bot
+          npm install
+
+      - name: 🌱 Sembrar Resultados Correctos (solo ejecución manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cd bot
+          node seed_today.js
+
+      - name: 🚀 Sincronizando Resultados en Vivo desde API
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          API_SPORTS_KEY: ${{ secrets.API_SPORTS_KEY }}
+        run: |
+          cd bot
+          node sync.js

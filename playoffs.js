@@ -561,8 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (statusCode === "2H")                  { estadoTxt = "2do Tiempo";  isLive = true; }
                     else if (statusCode === "HT")                  { estadoTxt = "Medio Tiempo"; isLive = true; }
                     else if (statusCode === "ET")                  { estadoTxt = "Tiempo Extra"; isLive = true; }
-                    else if (statusCode === "P" || statusCode === "PEN") { estadoTxt = "Penales"; isLive = true; }
-                    else if (statusCode === "FT" || statusCode === "AET") { estadoTxt = "FINALIZADO ✓"; color = "#9ca3af"; }
+                    else if (statusCode === "P")  { estadoTxt = "⚡ Penales"; isLive = true; }
+                    else if (statusCode === "PEN" || statusCode === "FT" || statusCode === "AET") { estadoTxt = "FINALIZADO ✓"; color = "#9ca3af"; }
 
                     if (isLive) color = "#22c55e";
 
@@ -721,4 +721,130 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="3" style="text-align: center; color: #ff4444;">Hubo un error de conexión rápida.</td></tr>';
         }
     }
+
+    // ---------------------------------------------------------------
+    // PANEL DE ADMINISTRACIÓN — Ingresar resultados reales a Firebase
+    // ---------------------------------------------------------------
+    function openAdminPanel() {
+        const existing = document.getElementById('adminResultsPanel');
+        if (existing) { existing.remove(); return; }
+
+        const STATUS_OPTIONS = [
+            { val: '',    label: '— Estado —' },
+            { val: '1H',  label: '⚽ 1er Tiempo (En vivo)' },
+            { val: 'HT',  label: '⏸ Medio Tiempo' },
+            { val: '2H',  label: '⚽ 2do Tiempo (En vivo)' },
+            { val: 'ET',  label: '⏱ Tiempo Extra' },
+            { val: 'P',   label: '🎯 Penales' },
+            { val: 'FT',  label: '✅ Finalizado (FT)' },
+            { val: 'AET', label: '✅ Finalizado tras prórroga (AET)' },
+        ];
+
+        const rows = matchesList.map(m => {
+            const saved = lastResultados[m.id] || {};
+            const opts = STATUS_OPTIONS.map(o =>
+                `<option value="${o.val}" ${saved.status === o.val ? 'selected' : ''} style="background:#0d1117;">${o.label}</option>`
+            ).join('');
+            return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:10px 8px; color:#e2e8f0; font-size:0.88rem; white-space:nowrap;">
+                    <img src="https://flagcdn.com/w20/${m.flag1}.png" style="vertical-align:middle; margin-right:4px;">${m.team1}
+                    <span style="color:#64748b; margin:0 4px;">vs</span>
+                    <img src="https://flagcdn.com/w20/${m.flag2}.png" style="vertical-align:middle; margin-right:4px;">${m.team2}
+                </td>
+                <td style="padding:6px 4px; text-align:center;">
+                    <input type="number" min="0" id="ar_s1_${m.id}" value="${saved.s1 ?? ''}" style="width:48px; text-align:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; padding:5px; font-size:1rem; font-weight:700;">
+                </td>
+                <td style="padding:6px 2px; text-align:center; color:#64748b; font-weight:700;">—</td>
+                <td style="padding:6px 4px; text-align:center;">
+                    <input type="number" min="0" id="ar_s2_${m.id}" value="${saved.s2 ?? ''}" style="width:48px; text-align:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; padding:5px; font-size:1rem; font-weight:700;">
+                </td>
+                <td style="padding:6px 4px;">
+                    <select id="ar_st_${m.id}" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; padding:5px 4px; font-size:0.8rem; width:100%;">${opts}</select>
+                </td>
+                <td style="padding:6px 4px; text-align:center;">
+                    <input type="number" min="0" max="120" id="ar_mn_${m.id}" value="${saved.minute ?? ''}" placeholder="Min" style="width:52px; text-align:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; padding:5px; font-size:0.9rem;">
+                </td>
+            </tr>`;
+        }).join('');
+
+        const panel = document.createElement('div');
+        panel.id = 'adminResultsPanel';
+        panel.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
+        panel.innerHTML = `
+            <div style="background:#0a0e17;border:1px solid rgba(56,189,248,0.35);border-radius:18px;padding:2rem;max-width:760px;width:96%;max-height:90vh;overflow-y:auto;">
+                <h2 style="color:var(--primary);text-align:center;margin-bottom:0.3rem;font-size:1.5rem;">🛡️ Panel de Resultados</h2>
+                <p style="text-align:center;color:#64748b;font-size:0.82rem;margin-bottom:1.5rem;">Ingresa el marcador y estado de cada partido. Solo guarda los que tengan datos completos.</p>
+                <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead><tr style="color:#64748b;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.5px;">
+                        <th style="padding:6px 8px;text-align:left;">Partido</th>
+                        <th style="padding:6px 4px;text-align:center;">Local</th>
+                        <th></th>
+                        <th style="padding:6px 4px;text-align:center;">Visita</th>
+                        <th style="padding:6px 4px;text-align:center;">Estado</th>
+                        <th style="padding:6px 4px;text-align:center;">Min.</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                </div>
+                <div style="text-align:center;margin-top:1.8rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                    <button id="arSaveBtn" style="background:var(--primary);color:#000;border:none;padding:0.75rem 2.2rem;border-radius:8px;font-weight:800;cursor:pointer;font-size:1rem;letter-spacing:0.5px;">💾 Guardar en Firebase</button>
+                    <button id="arCloseBtn" style="background:transparent;color:#9ca3af;border:1px solid rgba(255,255,255,0.15);padding:0.75rem 1.5rem;border-radius:8px;cursor:pointer;">Cerrar</button>
+                </div>
+                <p id="arMsg" style="text-align:center;margin-top:1rem;font-size:0.88rem;min-height:1.2rem;"></p>
+            </div>`;
+
+        document.body.appendChild(panel);
+
+        document.getElementById('arCloseBtn').onclick = () => panel.remove();
+        panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+
+        document.getElementById('arSaveBtn').onclick = async () => {
+            const btn = document.getElementById('arSaveBtn');
+            const msg = document.getElementById('arMsg');
+            btn.textContent = '⏳ Guardando...';
+            btn.disabled = true;
+
+            const updates = {};
+            matchesList.forEach(m => {
+                const s1 = document.getElementById(`ar_s1_${m.id}`).value.trim();
+                const s2 = document.getElementById(`ar_s2_${m.id}`).value.trim();
+                const status = document.getElementById(`ar_st_${m.id}`).value;
+                const minute = document.getElementById(`ar_mn_${m.id}`).value.trim();
+                if (s1 !== '' && s2 !== '' && status !== '') {
+                    updates[m.id] = { s1, s2, status, minute: minute || null };
+                }
+            });
+
+            try {
+                await setDoc(doc(db, "admin_playoff", "resultados"), {
+                    partidos: updates,
+                    ultima_sincronizacion: new Date().toISOString()
+                });
+                msg.style.color = '#22c55e';
+                msg.textContent = `✅ ${Object.keys(updates).length} partido(s) guardados. La tabla se actualizará automáticamente.`;
+            } catch (e) {
+                msg.style.color = '#ff4444';
+                msg.textContent = '❌ Error al guardar: ' + e.message;
+            } finally {
+                btn.textContent = '💾 Guardar en Firebase';
+                btn.disabled = false;
+            }
+        };
+    }
+
+    // Activar panel con doble clic en el logo
+    const logoElAdmin = document.querySelector('.logo');
+    if (logoElAdmin) {
+        logoElAdmin.addEventListener('dblclick', () => {
+            const pwd = prompt('🔑 Código de Administrador:');
+            if (pwd === 'CarlosPancho') {
+                openAdminPanel();
+            } else if (pwd !== null) {
+                alert('Clave incorrecta. Acceso denegado.');
+            }
+        });
+    }
+
 });
