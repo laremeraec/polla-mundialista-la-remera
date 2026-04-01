@@ -12,17 +12,25 @@ jobs:
       - name: Descargando Código
         uses: actions/checkout@v4
 
-      - name: Instalando Node.js
+      - name: Instalando Servidor Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Instalando Dependencias
+      - name: Instalando Dependencias (Axios, Firebase)
         run: |
           cd bot
           npm install
 
-      - name: Sincronizando Resultados
+      - name: 🌱 Sembrar Resultados Correctos (solo ejecución manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cd bot
+          node seed_today.js
+
+      - name: 🚀 Sincronizando Resultados en Vivo desde API
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           API_SPORTS_KEY: ${{ secrets.API_SPORTS_KEY }}
