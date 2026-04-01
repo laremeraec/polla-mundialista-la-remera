@@ -9,7 +9,7 @@ const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountKey),
+       credential: admin.credential.cert(servicAccountKey),
         databaseURL: "https://" + serviceAccountKey.project_id + "-default-rtdb.firebaseio.com"
     });
 }
@@ -67,7 +67,7 @@ async function syncResults() {
                 if (isMatch) {
                     // Determinar qué score corresponde a Team 1 y Team 2
                     let s1 = teams.t1.some(name => homeName.includes(name)) ? match.goals.home : match.goals.away;
-                    let s2 = teams.t2.some(name => awayName.includes(name)) ? match.goals.home : match.goals.away;
+                    let s2 = teams.t2.some(name => homeName.includes(name)) ? match.goals.home : match.goals.away;
 
                     // Si null significa que va 0-0 por ahora, o no empezó. 
                     if (s1 === null) s1 = 0;
