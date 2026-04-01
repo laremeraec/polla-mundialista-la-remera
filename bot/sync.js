@@ -9,7 +9,7 @@ const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
     admin.initializeApp({
-       credential: admin.credential.cert(servicAccountKey),
+       credential: admin.credential.cert(serviceAccountKey),
         databaseURL: "https://" + serviceAccountKey.project_id + "-default-rtdb.firebaseio.com"
     });
 }
